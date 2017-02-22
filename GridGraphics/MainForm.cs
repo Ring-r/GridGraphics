@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace GridGraphics
@@ -7,32 +8,54 @@ namespace GridGraphics
     {
         private class Grid
         {
-            private const int iCount = 10;
-            private const int jCount = 10;
+            public int X { get; set; }
+            public int Y { get; set; }
 
-            private const float xStep = 10;
-            private const float yStep = 10;
-
-            public void Draw(Graphics graphics, Pen pen, float dx, float dy, float scale)
+            private int step = 1;
+            public int Step
             {
-                var x = dx;
+                get
+                {
+                    return step;
+                }
+                set
+                {
+                    step = Math.Max(1, value);
+                }
+            }
+
+            private int iCount = 10;
+            private int jCount = 10;
+
+            public void ScaleToFit(int width, int height)
+            {
+                if (iCount == 0 || jCount == 0)
+                    return;
+
+                Step = Math.Min(width / iCount, height / jCount);
+            }
+
+            public void MoveToCenter(int width, int height)
+            {
+                X = (width - Step * iCount) / 2;
+                Y = (height - Step * jCount) / 2;
+            }
+
+            public void Draw(Graphics graphics, Pen pen)
+            {
+                var x = X;
                 for (var i = 0; i < iCount - 1; i++)
                 {
-                    var y = dy;
+                    var y = Y;
                     for (var j = 0; j < jCount - 1; j++)
                     {
-                        graphics.DrawRectangle(pen, x, y, xStep, yStep);
-                        y += yStep;
+                        graphics.DrawRectangle(pen, x, y, Step, Step);
+                        y += Step;
                     }
-                    x += xStep;
+                    x += Step;
                 }
             }
         }
-
-        private float x = 0;
-        private float y = 0;
-
-        private float scale = 1;
 
         private readonly Grid grid = new Grid();
 
@@ -47,11 +70,18 @@ namespace GridGraphics
         {
             if (e.KeyCode == Keys.Escape)
                 Close();
+            if (e.KeyCode == Keys.Enter)
+            {
+                grid.ScaleToFit(ClientSize.Width, ClientSize.Height);
+                grid.MoveToCenter(ClientSize.Width, ClientSize.Height);
+
+                Invalidate();
+            }
         }
 
         private void MainForm_Paint(object sender, PaintEventArgs e)
         {
-            grid.Draw(e.Graphics, gridPen, x, y, scale);
+            grid.Draw(e.Graphics, gridPen);
         }
 
         private bool isMouseDown = false;
@@ -70,10 +100,10 @@ namespace GridGraphics
             if (!isMouseDown)
                 return;
 
-            x += e.X - mouseDownX;
+            grid.X += e.X - mouseDownX;
             mouseDownX = e.X;
 
-            y += e.Y - mouseDownY;
+            grid.Y += e.Y - mouseDownY;
             mouseDownY = e.Y;
 
             Invalidate();
@@ -84,9 +114,12 @@ namespace GridGraphics
             isMouseDown = false;
         }
 
-        private void MainForm_MouseWheel(object sender, System.EventArgs e)
+        private void MainForm_MouseWheel(object sender, MouseEventArgs e)
         {
+            const int WHEEL_DELTA = 120; // TODO: How get it from system.
+            grid.Step -= e.Delta / WHEEL_DELTA;
 
+            Invalidate();
         }
     }
 }
