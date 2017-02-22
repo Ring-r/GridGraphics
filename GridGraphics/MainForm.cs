@@ -8,8 +8,8 @@ namespace GridGraphics
     {
         private class Grid
         {
-            public int X { get; set; }
-            public int Y { get; set; }
+            private int X { get; set; }
+            private int Y { get; set; }
 
             private int step = 1;
             public int Step
@@ -27,6 +27,38 @@ namespace GridGraphics
             private int iCount = 10;
             private int jCount = 10;
 
+            private int MinX
+            {
+                get
+                {
+                    return 0;
+                }
+            }
+
+            private int MaxX
+            {
+                get
+                {
+                    return Step * iCount;
+                }
+            }
+
+            private int MinY
+            {
+                get
+                {
+                    return 0;
+                }
+            }
+
+            private int MaxY
+            {
+                get
+                {
+                    return Step * jCount;
+                }
+            }
+
             public void ScaleToFit(int width, int height)
             {
                 if (iCount == 0 || jCount == 0)
@@ -35,31 +67,37 @@ namespace GridGraphics
                 Step = Math.Min(width / iCount, height / jCount);
             }
 
+            public void MoveBy(int width, int height, int dx, int dy)
+            {
+                X = Math.Min(Math.Max(MinX, X + dx), width - MaxX);
+                Y = Math.Min(Math.Max(MinY, Y + dy), height - MaxY);
+            }
+
             public void MoveToCenter(int width, int height)
             {
                 X = (width - Step * iCount) / 2;
                 Y = (height - Step * jCount) / 2;
             }
 
-            public void Draw(Graphics graphics, Pen pen)
+            private readonly Pen pen = Pens.Silver;
+            public void Draw(Graphics graphics)
             {
-                var x = X;
-                for (var i = 0; i < iCount - 1; i++)
-                {
-                    var y = Y;
-                    for (var j = 0; j < jCount - 1; j++)
-                    {
-                        graphics.DrawRectangle(pen, x, y, Step, Step);
-                        y += Step;
-                    }
-                    x += Step;
-                }
+                // TODO: Find correct start value closed to min.
+                var minX = X + MinX;
+                var maxX = X + MaxX;
+                var minY = Y + MinY;
+                var maxY = Y + MaxY;
+
+                for (var x = minX; x <= maxX; x += Step)
+                    graphics.DrawLine(pen, x, minY, x, maxY);
+
+                for (var y = minY; y <= maxY; y += Step)
+                    graphics.DrawLine(pen, minX, y, maxX, y);
             }
         }
 
         private readonly Grid grid = new Grid();
 
-        private readonly Pen gridPen = Pens.Silver;
 
         public MainForm()
         {
@@ -81,7 +119,7 @@ namespace GridGraphics
 
         private void MainForm_Paint(object sender, PaintEventArgs e)
         {
-            grid.Draw(e.Graphics, gridPen);
+            grid.Draw(e.Graphics);
         }
 
         private Point mouseLocation;
@@ -95,8 +133,7 @@ namespace GridGraphics
             if (e.Button != MouseButtons.Left)
                 return;
 
-            grid.X += e.X - mouseLocation.X;
-            grid.Y += e.Y - mouseLocation.Y;
+            grid.MoveBy(ClientSize.Width, ClientSize.Height, e.X - mouseLocation.X, e.Y - mouseLocation.Y);
 
             mouseLocation = e.Location;
 
