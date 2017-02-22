@@ -84,34 +84,23 @@ namespace GridGraphics
             grid.Draw(e.Graphics, gridPen);
         }
 
-        private bool isMouseDown = false;
-        private int mouseDownX;
-        private int mouseDownY;
+        private Point mouseLocation;
         private void MainForm_MouseDown(object sender, MouseEventArgs e)
         {
-            isMouseDown = true;
-
-            mouseDownX = e.X;
-            mouseDownY = e.Y;
+            mouseLocation = e.Location;
         }
 
         private void MainForm_MouseMove(object sender, MouseEventArgs e)
         {
-            if (!isMouseDown)
+            if (e.Button != MouseButtons.Left)
                 return;
 
-            grid.X += e.X - mouseDownX;
-            mouseDownX = e.X;
+            grid.X += e.X - mouseLocation.X;
+            grid.Y += e.Y - mouseLocation.Y;
 
-            grid.Y += e.Y - mouseDownY;
-            mouseDownY = e.Y;
+            mouseLocation = e.Location;
 
             Invalidate();
-        }
-
-        private void MainForm_MouseUp(object sender, MouseEventArgs e)
-        {
-            isMouseDown = false;
         }
 
         private void MainForm_MouseWheel(object sender, MouseEventArgs e)
