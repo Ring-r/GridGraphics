@@ -8,11 +8,70 @@ namespace GridGraphics
     {
         private class Grid
         {
-            private int X { get; set; }
-            private int Y { get; set; }
+            private int iCount = 10;
+            private int jCount = 10;
 
-            private int step = 1;
-            public int Step
+            private float gridCoefX;
+            private float gridSizeX
+            {
+                get
+                {
+                    return Step * iCount;
+                }
+            }
+            private float viewCoefX;
+            private float viewSizeX;
+            public float ViewSizeX
+            {
+                get
+                {
+                    return viewSizeX;
+                }
+                set
+                {
+                    if (value < 0)
+                        throw new ArgumentException();
+
+                    viewSizeX = value;
+                }
+            }
+
+            private float gridCoefY;
+            private float gridSizeY
+            {
+                get
+                {
+                    return Step * jCount;
+                }
+            }
+            private float viewCoefY;
+            private float viewSizeY;
+            public float ViewSizeY
+            {
+                get
+                {
+                    return viewSizeY;
+                }
+                set
+                {
+                    if (value < 0)
+                        throw new ArgumentException();
+
+                    viewSizeY = value;
+                }
+            }
+
+            public void SetAnchor(float viewCoefX, float gridCoefX, float viewCoefY, float gridCoefY)
+            {
+                this.viewCoefX = viewCoefX;
+                this.gridCoefX = gridCoefX;
+
+                this.viewCoefY = viewCoefY;
+                this.gridCoefY = gridCoefY;
+            }
+
+            private float step = 1;
+            public float Step
             {
                 get
                 {
@@ -20,79 +79,58 @@ namespace GridGraphics
                 }
                 set
                 {
-                    step = Math.Max(1, value);
+                    if (value <= 0)
+                        return;
+
+                    if (step == value)
+                        return;
+
+                    step = value;
                 }
             }
 
-            private int iCount = 10;
-            private int jCount = 10;
-
-            private int MinX
-            {
-                get
-                {
-                    return 0;
-                }
-            }
-
-            private int MaxX
-            {
-                get
-                {
-                    return Step * iCount;
-                }
-            }
-
-            private int MinY
-            {
-                get
-                {
-                    return 0;
-                }
-            }
-
-            private int MaxY
-            {
-                get
-                {
-                    return Step * jCount;
-                }
-            }
-
-            public void ScaleToFit(int width, int height)
+            public void ScaleToFit()
             {
                 if (iCount == 0 || jCount == 0)
                     return;
 
-                Step = Math.Min(width / iCount, height / jCount);
+                Step = Math.Min(viewSizeX / iCount, viewSizeY / jCount);
             }
 
-            public void MoveBy(int width, int height, int dx, int dy)
+            public void MoveByCell(int di, int dj)
             {
-                X = Math.Min(Math.Max(MinX, X + dx), width - MaxX);
-                Y = Math.Min(Math.Max(MinY, Y + dy), height - MaxY);
+                if (iCount <= 0 || jCount <= 0)
+                    return;
+
+                gridCoefX += (float)di / iCount;
+                gridCoefY += (float)dj / jCount;
             }
 
-            public void MoveToCenter(int width, int height)
+            public void MoveByView(float dx, float dy)
             {
-                X = (width - Step * iCount) / 2;
-                Y = (height - Step * jCount) / 2;
+                if (viewSizeX == 0 || viewSizeY == 0)
+                    return;
+
+                viewCoefX += dx / ViewSizeX;
+                viewCoefY += dy / ViewSizeY;
             }
 
-            private readonly Pen pen = Pens.Silver;
+            private readonly Pen pen = Pens.Black;
             public void Draw(Graphics graphics)
             {
                 // TODO: Find correct start value closed to min.
-                var minX = X + MinX;
-                var maxX = X + MaxX;
-                var minY = Y + MinY;
-                var maxY = Y + MaxY;
 
-                for (var x = minX; x <= maxX; x += Step)
-                    graphics.DrawLine(pen, x, minY, x, maxY);
+                var minX = viewCoefX * viewSizeX - gridCoefX * gridSizeX;
+                var maxX = minX + gridSizeX;
+                var minY = viewCoefY * viewSizeY - gridCoefY * gridSizeY;
+                var maxY = minY + gridSizeY;
 
-                for (var y = minY; y <= maxY; y += Step)
-                    graphics.DrawLine(pen, minX, y, maxX, y);
+                var step = Step;
+                for (var x = minX; x < maxX - step / 2; x += step)
+                {
+                    for (var y = minY; y < maxY - step / 2; y += step)
+                        graphics.DrawRectangle(pen, x, y, step, step);
+                }
             }
         }
 
@@ -104,14 +142,31 @@ namespace GridGraphics
             InitializeComponent();
         }
 
+        private void MainForm_KeyDown(object sender, KeyEventArgs e)
+        {
+            var di = 0;
+            var dj = 0;
+            if (e.KeyCode == Keys.Up)
+                dj += 1;
+            if (e.KeyCode == Keys.Right)
+                di -= 1;
+            if (e.KeyCode == Keys.Down)
+                dj -= 1;
+            if (e.KeyCode == Keys.Left)
+                di += 1;
+            grid.MoveByCell(di, dj);
+
+            Invalidate();
+        }
+
         private void MainForm_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Escape)
                 Close();
             if (e.KeyCode == Keys.Enter)
             {
-                grid.ScaleToFit(ClientSize.Width, ClientSize.Height);
-                grid.MoveToCenter(ClientSize.Width, ClientSize.Height);
+                grid.SetAnchor(0.5f, 0.5f, 0.5f, 0.5f);
+                grid.ScaleToFit();
 
                 Invalidate();
             }
@@ -120,6 +175,12 @@ namespace GridGraphics
         private void MainForm_Paint(object sender, PaintEventArgs e)
         {
             grid.Draw(e.Graphics);
+        }
+
+        private void MainForm_Resize(object sender, EventArgs e)
+        {
+            grid.ViewSizeX = ClientSize.Width;
+            grid.ViewSizeY = ClientSize.Height;
         }
 
         private Point mouseLocation;
@@ -133,7 +194,7 @@ namespace GridGraphics
             if (e.Button != MouseButtons.Left)
                 return;
 
-            grid.MoveBy(ClientSize.Width, ClientSize.Height, e.X - mouseLocation.X, e.Y - mouseLocation.Y);
+            grid.MoveByView(e.X - mouseLocation.X, e.Y - mouseLocation.Y);
 
             mouseLocation = e.Location;
 
