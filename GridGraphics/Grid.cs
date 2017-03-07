@@ -5,34 +5,108 @@ namespace GridGraphics
 {
     class Grid
     {
-        public class AxisSettings
+        public class Anchor
+        {
+            private float coef;
+            private float shift;
+            private float size;
+
+            protected void Recalculate(bool asCoef)
+            {
+                if (size == 0)
+                    return;
+
+                if (asCoef)
+                    shift = coef * size;
+                else
+                    coef = shift / size;
+            }
+
+            public bool AsCoef { get; set; }
+
+            public float Coef
+            {
+                get
+                {
+                    return coef;
+                }
+                set
+                {
+                    coef = value;
+
+                    Recalculate(true);
+                }
+            }
+            public float Shift
+            {
+                get
+                {
+                    return shift;
+                }
+                set
+                {
+                    shift = value;
+
+                    Recalculate(false);
+                }
+            }
+            protected float Size
+            {
+                get
+                {
+                    return size;
+                }
+                set
+                {
+                    SetSize(value, AsCoef);
+                }
+            }
+            protected void SetSize(float value, bool asCoef)
+            {
+                if (value <= 0)
+                    throw new ArgumentOutOfRangeException();
+
+                if (size == value)
+                    return;
+
+                size = value;
+
+                Recalculate(asCoef);
+            }
+
+            public void MoveBy(float delta)
+            {
+                if (delta == 0)
+                    return;
+
+                Shift += delta;
+            }
+        }
+
+        public class AnchorView : Anchor
+        {
+            public new float Size
+            {
+                get
+                {
+                    return base.Size;
+                }
+                set
+                {
+                    base.Size = value;
+                }
+            }
+            public new void SetSize(float value, bool asCoef)
+            {
+                base.SetSize(value, asCoef);
+            }
+
+        }
+
+        public class AxisSettings : Anchor
         {
             private int count;
             private float step = 1;
-            private float size;
-
-            private float anchorCoef;
-            private float anchorShift;
-
-            private float anchorViewCoef;
-            private float anchorViewShift;
-            private float viewSize;
-
-            private void RecalculateAnchor(bool anchorAsCoef)
-            {
-                if (anchorAsCoef)
-                    ; // TODO: Recalculate anchorShift;
-                else
-                    ; // TODO: Recalculate anchorCoef;
-            }
-
-            private void RecalculateAnchorView(bool anchorAsCoef)
-            {
-                if (anchorAsCoef)
-                    ; // TODO: Recalculate anchorViewShift;
-                else
-                    ; // TODO: Recalculate anchorViewCoef;
-            }
 
             public int Count
             {
@@ -40,17 +114,32 @@ namespace GridGraphics
                 {
                     return count;
                 }
+                set
+                {
+                    SetCount(value, AsCoef);
+                }
             }
-            public void SetCount(int value, bool anchorAsCoef)
+            public void SetCount(int value, bool asCoef)
             {
                 if (value < 0)
                     throw new ArgumentOutOfRangeException();
 
                 count = value;
 
-                RecalculateAnchor(anchorAsCoef);
+                SetSize(count * step, AsCoef);
             }
-            public void SetStep(float value, bool anchorAsCoef)
+            public float Step
+            {
+                get
+                {
+                    return step;
+                }
+                set
+                {
+                    SetStep(value, AsCoef);
+                }
+            }
+            public void SetStep(float value, bool asCoef)
             {
                 if (value <= 0)
                     throw new ArgumentOutOfRangeException();
@@ -60,109 +149,23 @@ namespace GridGraphics
 
                 step = value;
 
-                RecalculateAnchor(anchorAsCoef);
+                SetSize(count * step, AsCoef);
             }
 
-            public float Size
+            public new float Size
             {
                 get
                 {
-                    return count * step;
+                    return base.Size;
                 }
-            }
-
-            public float AnchorCoef
-            {
-                get
-                {
-                    return anchorCoef;
-                }
-                set
-                {
-                    anchorCoef = value;
-
-                    RecalculateAnchor(true);
-                }
-            }
-            public float AnchorShift
-            {
-                get
-                {
-                    return anchorShift;
-                }
-                set
-                {
-                    anchorShift = value;
-
-                    RecalculateAnchor(false);
-                }
-            }
-
-            public float AnchorViewCoef
-            {
-                get
-                {
-                    return anchorViewCoef;
-                }
-                set
-                {
-                    anchorViewCoef = value;
-
-                    RecalculateAnchorView(true);
-                }
-            }
-            public float AnchorViewShift
-            {
-                get
-                {
-                    return anchorViewShift;
-                }
-                set
-                {
-                    anchorViewShift = value;
-
-                    RecalculateAnchorView(false);
-                }
-            }
-            public float ViewSize
-            {
-                get
-                {
-                    return viewSize;
-                }
-            }
-            public void SetViewSize(float value, bool anchorViewAsCoef)
-            {
-                if (value <= 0)
-                    throw new ArgumentOutOfRangeException();
-
-                if (viewSize == value)
-                    return;
-
-                viewSize = value;
-
-                RecalculateAnchorView(anchorViewAsCoef);
-            }
-
-            public void MoveByCell(int shift)
-            {
-                if (shift == 0 || Count == 0)
-                    return;
-
-                AnchorCoef += (float)shift / Count;
-            }
-
-            public void MoveByView(float shift)
-            {
-                if (shift == 0)
-                    return;
-
-                anchorViewShift += shift / ViewSize;
             }
         }
 
         public readonly AxisSettings AxisSettingsX = new AxisSettings();
         public readonly AxisSettings AxisSettingsY = new AxisSettings();
+
+        public readonly AnchorView AnchorViewX = new AnchorView();
+        public readonly AnchorView AnchorViewY = new AnchorView();
 
         public Grid()
         {
@@ -170,40 +173,14 @@ namespace GridGraphics
             AxisSettingsY.SetCount(10, true);
         }
 
-        private float viewSizeX;
-
-        private float viewSizeY;
-
-        private float step = 1;
-        public float Step
-        {
-            get
-            {
-                return step;
-            }
-        }
-        public void SetStep(float value, bool anchorAsCoefX, bool anchorAsCoefY)
-        {
-            if (value <= 0)
-                throw new ArgumentOutOfRangeException();
-
-            if (step == value)
-                return;
-
-            step = value;
-
-            AxisSettingsX.SetStep(step, anchorAsCoefX);
-            AxisSettingsY.SetStep(step, anchorAsCoefY);
-        }
-
         public void ScaleToFit()
         {
             if (AxisSettingsX.Count == 0 || AxisSettingsY.Count == 0)
                 return;
 
-            var step = Math.Min(viewSizeX / AxisSettingsX.Count, viewSizeY / AxisSettingsY.Count);
-            AxisSettingsX.SetStep(step, true); // TODO: Is it correct?
-            AxisSettingsY.SetStep(step, true); // TODO: Is it correct?
+            var step = Math.Min(AnchorViewX.Size / AxisSettingsX.Count, AnchorViewY.Size / AxisSettingsY.Count);
+            AxisSettingsX.Step = step;
+            AxisSettingsY.Step = step;
         }
 
         private readonly Pen pen = Pens.Black;
@@ -211,16 +188,17 @@ namespace GridGraphics
         {
             // TODO: Find correct start value closed to min.
 
-            var minX = AxisSettingsX.AnchorViewShift - AxisSettingsX.AnchorShift;
+            var minX = AnchorViewX.Shift - AxisSettingsX.Shift;
             var maxX = minX + AxisSettingsX.Size;
-            var minY = AxisSettingsY.AnchorViewShift - AxisSettingsY.AnchorShift;
+            var minY = AnchorViewY.Shift - AxisSettingsY.Shift;
             var maxY = minY + AxisSettingsY.Size;
 
-            var step = Step;
-            for (var x = minX; x < maxX - step / 2; x += step)
+            var stepX = AxisSettingsX.Step;
+            var stepY = AxisSettingsY.Step;
+            for (var x = minX; x < maxX - stepX / 2; x += stepX)
             {
-                for (var y = minY; y < maxY - step / 2; y += step)
-                    graphics.DrawRectangle(pen, x, y, step, step);
+                for (var y = minY; y < maxY - stepY / 2; y += stepY)
+                    graphics.DrawRectangle(pen, x, y, stepX, stepY);
             }
         }
     }

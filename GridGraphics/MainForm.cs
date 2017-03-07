@@ -20,14 +20,16 @@ namespace GridGraphics
                 di += 1;
             if (e.KeyCode == Keys.Right)
                 di -= 1;
-            grid.AxisSettingsX.MoveByCell(di);
+            if (di != 0)
+                grid.AxisSettingsX.MoveBy(di * grid.AxisSettingsX.Step);
 
             var dj = 0;
             if (e.KeyCode == Keys.Up)
                 dj += 1;
             if (e.KeyCode == Keys.Down)
                 dj -= 1;
-            grid.AxisSettingsY.MoveByCell(di);
+            if (dj != 0)
+                grid.AxisSettingsY.MoveBy(dj * grid.AxisSettingsY.Step);
 
             Invalidate();
         }
@@ -38,10 +40,18 @@ namespace GridGraphics
                 Close();
             if (e.KeyCode == Keys.Enter)
             {
-                grid.AxisSettingsX.AnchorCoef = 0.5f;
-                grid.AxisSettingsX.AnchorViewCoef = 0.5f;
-                grid.AxisSettingsY.AnchorCoef = 0.5f;
-                grid.AxisSettingsY.AnchorViewCoef = 0.5f;
+                grid.AxisSettingsX.AsCoef = true;
+                grid.AxisSettingsX.Coef = 0.5f;
+
+                grid.AnchorViewX.AsCoef = true;
+                grid.AnchorViewX.Coef = 0.5f;
+
+                grid.AxisSettingsY.AsCoef = true;
+                grid.AxisSettingsY.Coef = 0.5f;
+
+                grid.AnchorViewY.AsCoef = true;
+                grid.AnchorViewY.Coef = 0.5f;
+
                 grid.ScaleToFit();
 
                 Invalidate();
@@ -55,8 +65,8 @@ namespace GridGraphics
 
         private void MainForm_Resize(object sender, EventArgs e)
         {
-            grid.AxisSettingsX.SetViewSize(ClientSize.Width, true);
-            grid.AxisSettingsY.SetViewSize(ClientSize.Height, true);
+            grid.AnchorViewX.Size = ClientSize.Width;
+            grid.AnchorViewY.Size = ClientSize.Height;
         }
 
         private Point mouseLocation;
@@ -70,8 +80,8 @@ namespace GridGraphics
             if (e.Button != MouseButtons.Left)
                 return;
 
-            grid.AxisSettingsX.MoveByView(e.X - mouseLocation.X);
-            grid.AxisSettingsY.MoveByView(e.Y - mouseLocation.Y);
+            grid.AnchorViewX.MoveBy(e.X - mouseLocation.X);
+            grid.AnchorViewY.MoveBy(e.Y - mouseLocation.Y);
 
             mouseLocation = e.Location;
 
@@ -81,7 +91,10 @@ namespace GridGraphics
         private void MainForm_MouseWheel(object sender, MouseEventArgs e)
         {
             const int WHEEL_DELTA = 120; // TODO: How get it from system?
-            grid.SetStep(grid.Step - e.Delta / WHEEL_DELTA, true, true);
+            var delta = e.Delta / WHEEL_DELTA;
+
+            grid.AxisSettingsX.Step = Math.Max(1, grid.AxisSettingsX.Step - delta);
+            grid.AxisSettingsY.Step = Math.Max(1, grid.AxisSettingsY.Step - delta);
 
             Invalidate();
         }
