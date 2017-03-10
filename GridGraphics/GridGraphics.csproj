@@ -46,6 +46,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Anchor.cs" />
+    <Compile Include="AnchorGrid.cs" />
     <Compile Include="Grid.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>

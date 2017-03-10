@@ -11,25 +11,21 @@ namespace GridGraphics
         public MainForm()
         {
             InitializeComponent();
+
+            grid.AnchorX.AsCoef = true;
+            grid.AnchorY.AsCoef = true;
+
+            grid.AnchorGridX.AsCoef = true;
+            grid.AnchorGridY.AsCoef = true;
         }
 
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
         {
-            var di = 0;
-            if (e.KeyCode == Keys.Left)
-                di += 1;
-            if (e.KeyCode == Keys.Right)
-                di -= 1;
-            if (di != 0)
-                grid.AxisSettingsX.MoveBy(di * grid.AxisSettingsX.Step);
+            var di = Convert.ToInt32(e.KeyCode == Keys.Left) - Convert.ToInt32(e.KeyCode == Keys.Right);
+            grid.AnchorGridX.ShiftCells(di);
 
-            var dj = 0;
-            if (e.KeyCode == Keys.Up)
-                dj += 1;
-            if (e.KeyCode == Keys.Down)
-                dj -= 1;
-            if (dj != 0)
-                grid.AxisSettingsY.MoveBy(dj * grid.AxisSettingsY.Step);
+            var dj = Convert.ToInt32(e.KeyCode == Keys.Up) - Convert.ToInt32(e.KeyCode == Keys.Down);
+            grid.AnchorGridY.ShiftCells(di);
 
             Invalidate();
         }
@@ -40,18 +36,7 @@ namespace GridGraphics
                 Close();
             if (e.KeyCode == Keys.Enter)
             {
-                grid.AxisSettingsX.AsCoef = true;
-                grid.AxisSettingsX.Coef = 0.5f;
-
-                grid.AnchorViewX.AsCoef = true;
-                grid.AnchorViewX.Coef = 0.5f;
-
-                grid.AxisSettingsY.AsCoef = true;
-                grid.AxisSettingsY.Coef = 0.5f;
-
-                grid.AnchorViewY.AsCoef = true;
-                grid.AnchorViewY.Coef = 0.5f;
-
+                grid.MoveToCenter();
                 grid.ScaleToFit();
 
                 Invalidate();
@@ -65,8 +50,8 @@ namespace GridGraphics
 
         private void MainForm_Resize(object sender, EventArgs e)
         {
-            grid.AnchorViewX.Size = ClientSize.Width;
-            grid.AnchorViewY.Size = ClientSize.Height;
+            grid.AnchorX.Size = ClientSize.Width;
+            grid.AnchorY.Size = ClientSize.Height;
         }
 
         private Point mouseLocation;
@@ -80,8 +65,8 @@ namespace GridGraphics
             if (e.Button != MouseButtons.Left)
                 return;
 
-            grid.AnchorViewX.MoveBy(e.X - mouseLocation.X);
-            grid.AnchorViewY.MoveBy(e.Y - mouseLocation.Y);
+            grid.AnchorX.Shift += e.X - mouseLocation.X;
+            grid.AnchorY.Shift += e.Y - mouseLocation.Y;
 
             mouseLocation = e.Location;
 
@@ -93,8 +78,8 @@ namespace GridGraphics
             const int WHEEL_DELTA = 120; // TODO: How get it from system?
             var delta = e.Delta / WHEEL_DELTA;
 
-            grid.AxisSettingsX.Step = Math.Max(1, grid.AxisSettingsX.Step - delta);
-            grid.AxisSettingsY.Step = Math.Max(1, grid.AxisSettingsY.Step - delta);
+            grid.AnchorGridX.Step = Math.Max(1, grid.AnchorGridX.Step - delta);
+            grid.AnchorGridY.Step = Math.Max(1, grid.AnchorGridY.Step - delta);
 
             Invalidate();
         }
