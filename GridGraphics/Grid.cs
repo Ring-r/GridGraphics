@@ -42,8 +42,11 @@ namespace GridGraphics
             // TODO: Find correct start value closed to min.
 
             var minX = AnchorX.Shift - AnchorGridX.Shift;
+            minX = StayInBorder(minX, AnchorX.Size - AnchorGridX.Size);
             var maxX = minX + AnchorGridX.Size;
+
             var minY = AnchorY.Shift - AnchorGridY.Shift;
+            minY = StayInBorder(minY, AnchorY.Size - AnchorGridY.Size);
             var maxY = minY + AnchorGridY.Size;
 
             var stepX = AnchorGridX.Step;
@@ -53,6 +56,14 @@ namespace GridGraphics
                 for (var y = minY; y < maxY - stepY / 2; y += stepY)
                     graphics.DrawRectangle(pen, x, y, stepX, stepY);
             }
+        }
+
+        private static float StayInBorder(float value, float size)
+        {
+            if (size < 0)
+                throw new ArgumentOutOfRangeException();
+
+            return Math.Min(Math.Max(0, value), size);
         }
     }
 }
