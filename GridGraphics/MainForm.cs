@@ -22,10 +22,16 @@ namespace GridGraphics
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
         {
             var di = Convert.ToInt32(e.KeyCode == Keys.Left) - Convert.ToInt32(e.KeyCode == Keys.Right);
+            var shiftX = grid.AnchorGridX.Shift;
             grid.AnchorGridX.ShiftCells(di);
+            if (!grid.AnchorGridX.InBorder())
+                grid.AnchorGridX.Shift = shiftX;
 
             var dj = Convert.ToInt32(e.KeyCode == Keys.Up) - Convert.ToInt32(e.KeyCode == Keys.Down);
-            grid.AnchorGridY.ShiftCells(di);
+            var shiftY = grid.AnchorGridY.Shift;
+            grid.AnchorGridY.ShiftCells(dj);
+            if (!grid.AnchorGridY.InBorder())
+                grid.AnchorGridY.Shift = shiftY;
 
             Invalidate();
         }
@@ -65,8 +71,15 @@ namespace GridGraphics
             if (e.Button != MouseButtons.Left)
                 return;
 
+            var shiftX = grid.AnchorX.Shift;
             grid.AnchorX.Shift += e.X - mouseLocation.X;
+            if (!grid.AnchorGridX.InBorder())
+                grid.AnchorX.Shift = shiftX;
+
+            var shiftY = grid.AnchorY.Shift;
             grid.AnchorY.Shift += e.Y - mouseLocation.Y;
+            if (!grid.AnchorGridY.InBorder())
+                grid.AnchorY.Shift = shiftY;
 
             mouseLocation = e.Location;
 
@@ -78,8 +91,17 @@ namespace GridGraphics
             const int WHEEL_DELTA = 120; // TODO: How get it from system?
             var delta = e.Delta / WHEEL_DELTA;
 
+            var stepX = grid.AnchorGridX.Step;
+            var stepY = grid.AnchorGridY.Step;
+
             grid.AnchorGridX.Step = Math.Max(1, grid.AnchorGridX.Step - delta);
             grid.AnchorGridY.Step = Math.Max(1, grid.AnchorGridY.Step - delta);
+
+            if (!grid.AnchorGridX.InBorder() || !grid.AnchorGridY.InBorder())
+            {
+                grid.AnchorGridX.Step = stepX;
+                grid.AnchorGridY.Step = stepY;
+            }
 
             Invalidate();
         }

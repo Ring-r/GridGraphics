@@ -14,7 +14,10 @@ namespace GridGraphics
         public Grid()
         {
             AnchorGridX.SetCount(10, true);
+            AnchorGridX.Parent = AnchorX;
+
             AnchorGridY.SetCount(10, true);
+            AnchorGridY.Parent = AnchorY;
         }
 
         public void MoveToCenter()
@@ -37,16 +40,16 @@ namespace GridGraphics
         }
 
         private readonly Pen pen = Pens.Black;
+        private readonly Pen crossPen = Pens.Red;
+        private readonly float crossHalfSize = 5f;
         public void Draw(Graphics graphics)
         {
             // TODO: Find correct start value closed to min.
 
-            var minX = AnchorX.Shift - AnchorGridX.Shift;
-            minX = StayInBorder(minX, AnchorX.Size - AnchorGridX.Size);
+            var minX = AnchorGridX.GlobalShift;
             var maxX = minX + AnchorGridX.Size;
 
-            var minY = AnchorY.Shift - AnchorGridY.Shift;
-            minY = StayInBorder(minY, AnchorY.Size - AnchorGridY.Size);
+            var minY = AnchorGridY.GlobalShift;
             var maxY = minY + AnchorGridY.Size;
 
             var stepX = AnchorGridX.Step;
@@ -56,14 +59,11 @@ namespace GridGraphics
                 for (var y = minY; y < maxY - stepY / 2; y += stepY)
                     graphics.DrawRectangle(pen, x, y, stepX, stepY);
             }
-        }
 
-        private static float StayInBorder(float value, float size)
-        {
-            if (size < 0)
-                throw new ArgumentOutOfRangeException();
-
-            return Math.Min(Math.Max(0, value), size);
+            var crossX = AnchorX.Shift;
+            var crossY = AnchorY.Shift;
+            graphics.DrawLine(crossPen, crossX - crossHalfSize, crossY, crossX + crossHalfSize, crossY);
+            graphics.DrawLine(crossPen, crossX, crossY - crossHalfSize, crossX, crossY + crossHalfSize);
         }
     }
 }

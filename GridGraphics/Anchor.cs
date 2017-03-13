@@ -70,5 +70,21 @@ namespace GridGraphics
 
             Recalculate(asCoef);
         }
+
+        public Anchor Parent { get; set; }
+
+        public float GlobalShift
+        {
+            get
+            {
+                return Parent == null ? Shift : Parent.GlobalShift - Shift;
+            }
+        }
+
+        public bool InBorder()
+        {
+            var globalShift = GlobalShift;
+            return 0 <= globalShift && globalShift <= Parent.Size - Size;
+        }
     }
 }
